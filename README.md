@@ -15,8 +15,9 @@ cargo run
 
 ## Acknowledgements
 
-- Inspiration, guidance, and mentorship from [Chip8-Book](https://github.com/aquova/chip8-book)
+- Inspiration and guidance from [Chip8-Book](https://github.com/aquova/chip8-book)
   by [Austin Bricker](https://github.com/aquova).
+- also [Chip8.js](https://github.com/taniarascia/chip8/tree/master) by [Tania Rascia](https://github.com/taniarascia)
 - [Cowgod's Chip-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#8xy3), made by Thomas P.
   Greene.
 - [CHIP-8 - Wikipedia](https://en.wikipedia.org/wiki/CHIP-8).
