@@ -1,16 +1,15 @@
-use std::fmt::{Debug, Formatter};
-use std::fs::File;
-use std::io::BufReader;
-use std::time::Duration;
-
-use rand::{Rng, thread_rng};
-use rand::rngs::ThreadRng;
-use rodio::{Decoder, OutputStream, Sink, Source};
-
 use crate::chip8::constants::{
     FONTSET, FONTSET_SIZE, NUM_KEYS, NUM_REGS, RAM_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH, SOUND_FILE,
     STACK_SIZE, START_ADDR,
 };
+use rand::rngs::ThreadRng;
+use rand::{thread_rng, Rng};
+use rodio::{Decoder, OutputStream, Sink, Source};
+use std::fmt::{Debug, Formatter};
+use std::fs::File;
+use std::io::BufReader;
+use std::thread;
+use std::time::Duration;
 
 pub struct Chip8 {
     screen: [bool; SCREEN_WIDTH * SCREEN_HEIGHT], // 63x32 monochrome display; sprites are 8 pixels wide but between 1 and 16 pixels tall
@@ -518,27 +517,28 @@ impl Chip8 {
         }
     }
 
-    // TODO: do not block main thread while playing the sound
     fn play_sound(&self) {
-        // Load a sound from a file, using a path relative to Cargo.toml
-        let file = File::open(SOUND_FILE).expect("Could not open Audio File");
+        thread::spawn(move || {
+            // Load a sound from a file, using a path relative to Cargo.toml
+            let file = File::open(SOUND_FILE).expect("Could not open Audio File");
 
-        // Decode that sound file into a source
-        let file = BufReader::new(file);
+            // Decode that sound file into a source
+            let file = BufReader::new(file);
 
-        let source = Decoder::new(file)
-            .expect("Could not decode File")
-            .take_duration(Duration::from_secs_f32(0.20))
-            .amplify(0.20);
+            let audio_source = Decoder::new(file)
+                .expect("Could not decode File")
+                .take_duration(Duration::from_millis(800))
+                .amplify(0.20);
 
-        // Get an output stream handle to the default physical sound device
-        let (_stream, stream_handle) =
-            OutputStream::try_default().expect("Could not access default audio device");
+            // Get an output stream handle to the default physical sound device
+            let (_stream, stream_handle) =
+                OutputStream::try_default().expect("Could not access default audio device");
 
-        let sink = Sink::try_new(&stream_handle).unwrap();
+            let sink = Sink::try_new(&stream_handle).unwrap();
 
-        sink.append(source);
+            sink.append(audio_source);
 
-        sink.sleep_until_end();
+            sink.sleep_until_end();
+        });
     }
 }
