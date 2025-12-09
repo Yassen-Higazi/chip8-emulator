@@ -8,6 +8,7 @@ use rodio::{Decoder, OutputStream, Sink, Source};
 use std::fmt::{Debug, Formatter};
 use std::fs::File;
 use std::io::BufReader;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -25,6 +26,7 @@ pub struct Chip8 {
 
     // Random number generator
     rng: ThreadRng,
+    sound_file: Arc<File>,
 }
 
 impl Debug for Chip8 {
@@ -39,6 +41,9 @@ impl Debug for Chip8 {
 
 impl Chip8 {
     pub fn new() -> Self {
+        // Load a sound from a file, using a path relative to Cargo.toml
+        let file = File::open(SOUND_FILE).expect("Could not open Audio File");
+
         let mut chip8 = Self {
             pc: START_ADDR,
             memory: [0; RAM_SIZE],
@@ -51,6 +56,7 @@ impl Chip8 {
             delay_timer_reg: 0,
             sound_timer_reg: 0,
             rng: thread_rng(),
+            sound_file: Arc::new(file),
         };
 
         chip8.memory[..FONTSET_SIZE].copy_from_slice(&FONTSET);
@@ -518,13 +524,9 @@ impl Chip8 {
     }
 
     fn play_sound(&self) {
+        let file = self.sound_file.clone();
+
         thread::spawn(move || {
-            // Load a sound from a file, using a path relative to Cargo.toml
-            let file = File::open(SOUND_FILE).expect("Could not open Audio File");
-
-            // Decode that sound file into a source
-            let file = BufReader::new(file);
-
             let audio_source = Decoder::new(file)
                 .expect("Could not decode File")
                 .take_duration(Duration::from_millis(800))
